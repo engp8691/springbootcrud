@@ -1,49 +1,57 @@
 package com.luv2code.springboot.cruddemo.service;
 
 import java.util.List;
+import java.util.Optional;
+
+import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import com.luv2code.springboot.cruddemo.dao.EmployeeDAO;
+import com.luv2code.springboot.cruddemo.dao.EmployeeRepository;
 import com.luv2code.springboot.cruddemo.entity.Employee;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
-	private EmployeeDAO employeeDAO;
-
+	private EmployeeRepository  employeeRepository;
+	
 	@Autowired
-	public EmployeeServiceImpl(@Qualifier("employeeDAOJpaImpl") EmployeeDAO employeeDAO) {
-		// As we have both the Hibernate and JPA DAOImpls, here we need to use @Qualidier to
-		// specify which DAOImpl to use
-		this.employeeDAO = employeeDAO;
-	}
-
-	// All the methods just call the same methods in the DAO.
-	// It means the service just delegate the calls to DAO.
-	@Override
-	@Transactional
-	public List<Employee> findAll() {
-		return employeeDAO.findAll();		
+	public EmployeeServiceImpl(EmployeeRepository employeeRepository) {
+		this.employeeRepository = employeeRepository;
 	}
 
 	@Override
-	@Transactional
+	public List<Employee> findAll(){
+		return employeeRepository.findAll();
+	};
+
+	@Override
 	public Employee findById(int theId) {
-		return employeeDAO.findById(theId);
-	}
+		Optional<Employee> result = employeeRepository.findById(theId);
+		
+		Employee theEmployee = null;
+		if(result.isPresent()) {
+			theEmployee = result.get();
+		}else {
+			throw new RuntimeException("Did not find employee id - " + theId);
+		}
+		
+		return theEmployee;		
+	};
 
 	@Override
-	@Transactional
 	public void save(Employee theEmployee) {
-		employeeDAO.save(theEmployee);
-	}
+		employeeRepository.save(theEmployee);
+	};
 
 	@Override
-	@Transactional
 	public void deleteById(int theId) {
-		employeeDAO.deleteById(theId);
-	}
+		Employee theEmployee = findById(theId);
+		
+		if(theEmployee != null) {
+			employeeRepository.deleteById(theId);	
+		}else {
+			throw new RuntimeException("Did not find employee id - " + theId);
+		}		
+	}	
 }
